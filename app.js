@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const fs = require('fs');
-const Jimp = require("jimp");
+const sharp = require('sharp');
 
 global.appRoot = path.resolve(__dirname);
 
@@ -34,7 +34,6 @@ server.get("/", (req, res) => {
 server.get("/:w/:h", (req, res) => {
     const maxWidth = Number(req.params.w) || 100;
     const maxHeight = Number(req.params.h) || 100;
-    let ratio = 0;
 
     const directoryPath = appRoot + '/assets/uploads/';
 
@@ -47,35 +46,15 @@ server.get("/:w/:h", (req, res) => {
     // Do something with the file content
     const imgPath = directoryPath + randomFile;
 
-    Jimp.read(imgPath, (err, image) => {
-        if (err) readDummyImage(res);
-        if(image) {
-            const width = image?.bitmap?.width || 50; // the width of the image
-            const height = image?.bitmap?.height || 50; // the height of the image
-            let newWidth = 0;
-            let newHeight = 0;
-        
-            // Check if the current width is larger than the max
-            if(width > maxWidth){
-                ratio = maxWidth / width; // get ratio for scaling image
-                newWidth = maxWidth; // Set new width
-                newHeight = height * ratio; // Scale height based on ratio
-            }
-        
-            // Check if current height is larger than max
-            if(height > maxHeight){
-                ratio = maxHeight / height; // get ratio for scaling image
-                newWidth = width * ratio; // Scale width based on ratio
-                newHeight = maxHeight; // Set new height
-            }
+    // Load the image
+    const image = sharp(imgPath);
 
-            const jimpImg = width && height ? image?.resize(newWidth, newHeight) : image;
-            const mime = jimpImg.getMIME();
-            jimpImg.getBuffer(mime, (er, buffer) => {
-                if (er) throw er;
-                res.end(buffer);
-            });
-        }
+    // Resize the image
+    const resizedImage = image.resize(maxWidth, maxHeight);
+
+    // Return the resized image
+    resizedImage.toBuffer((err, info) => {
+        res.end(info);
     });
 });
 
