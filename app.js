@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const fs = require('fs');
 const sharp = require('sharp');
+const mime = require('mime-types');
 
 global.appRoot = path.resolve(__dirname);
 
@@ -49,11 +50,14 @@ server.get("/:w/:h", (req, res) => {
     // Load the image
     const image = sharp(imgPath);
 
+    const mimeType = mime.lookup(imgPath);
+
     // Resize the image
     const resizedImage = image.resize(maxWidth, maxHeight);
 
     // Return the resized image
     resizedImage.toBuffer((err, info) => {
+        res.setHeader('Content-Type', mimeType);
         res.end(info);
     });
 });
